@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>China 2027 — Vélo</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#141820;--bg2:#1a1e2e;--bg3:#1f2438;--bg4:#242840;
+  --peach:#ff8c6b;--peach-d:#d4603a;--peach-m:#e87050;
+  --peach-dim:rgba(255,140,107,.07);--peach-border:rgba(255,140,107,.14);
+  --blue:#6aaed4;--white:rgba(226,230,240,.75);--muted:rgba(226,230,240,.3);
+  --dimmer:rgba(226,230,240,.15);--text:#e2e6f0;
+  --orange:#c47a2a;--red:#c45a5a;--yellow:#c4b44a;--green:#5aab6e;
+}
+html,body{min-height:100vh;background:var(--bg);font-family:'Barlow',sans-serif;color:var(--text);overflow-x:hidden}
+
+body::before{content:'';position:fixed;inset:0;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 32px,rgba(255,140,107,.018) 32px,rgba(255,140,107,.018) 33px),
+  repeating-linear-gradient(60deg,transparent,transparent 55px,rgba(255,140,107,.01) 55px,rgba(255,140,107,.01) 56px);
+  pointer-events:none;z-index:0}
+
+/* MONTAGNES BG */
+.mountain-bg{position:fixed;inset:0;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:relative;z-index:10;background:rgba(20,24,32,.96);border-bottom:1px solid var(--peach-border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(12px)}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-icon{width:36px;height:36px;border-radius:50%;background:var(--peach-m);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 14px rgba(255,140,107,.25)}
+.nav-name{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--text);letter-spacing:.06em;text-transform:uppercase}
+.nav-sub{font-size:10px;color:var(--muted);letter-spacing:.18em}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-back{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:.1em;transition:color .2s}
+.nav-back:hover{color:var(--peach)}
+.btn-sortie{background:var(--peach-m);border:none;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;padding:10px 22px;border-radius:4px;cursor:pointer;transition:background .2s;text-transform:uppercase}
+.btn-sortie:hover{background:var(--peach-d)}
+
+/* TABS */
+.tabs{position:relative;z-index:9;background:rgba(20,24,32,.92);border-bottom:1px solid var(--peach-border);padding:0 28px;display:flex;backdrop-filter:blur(10px)}
+.tab{padding:12px 22px;font-size:11px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.12em;transition:all .2s;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase}
+.tab.active{color:var(--peach);border-bottom-color:var(--peach)}
+.tab:hover{color:var(--text)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+.wrapper{position:relative;z-index:2;max-width:1060px;margin:0 auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px}
+
+/* HERO */
+.hero{position:relative;height:260px;border-radius:12px;overflow:hidden}
+.hero-canvas{width:100%;height:100%;display:block}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 20%,rgba(20,24,32,.92) 100%)}
+.hero-content{position:absolute;bottom:0;left:0;right:0;padding:22px 26px;display:flex;align-items:flex-end;justify-content:space-between}
+.hero-left{flex:1}
+.hero-day-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:rgba(255,140,107,.5);letter-spacing:.22em;text-transform:uppercase;margin-bottom:4px}
+.hero-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
+.hero-title em{color:var(--peach);font-style:normal}
+.hero-desc{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6;max-width:500px}
+.hero-right{flex-shrink:0;margin-left:20px}
+.weather-box{background:rgba(20,24,32,.8);border:1px solid var(--peach-border);border-radius:8px;padding:12px 16px;backdrop-filter:blur(8px);text-align:center;min-width:100px}
+.w-icon{font-size:26px;line-height:1}
+.w-temp{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-top:3px}
+.w-desc{font-size:10px;color:var(--muted);margin-top:1px}
+.w-advice{font-size:10px;margin-top:4px}
+.w-go{color:var(--green)}.w-wait{color:var(--orange)}
+
+/* ODOMETER */
+.odo-wrap{background:var(--bg2);border:1px solid var(--peach-border);border-radius:12px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden}
+.odo-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--peach-m),transparent)}
+.odo-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+.odo{display:flex;gap:3px;align-items:center}
+.odo-d{background:#0d1018;border:1px solid rgba(255,140,107,.2);border-radius:4px;width:36px;height:50px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;color:var(--peach);position:relative;overflow:hidden}
+.odo-d::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,140,107,.12)}
+.odo-dot{font-family:'Barlow Condensed',sans-serif;font-size:22px;color:rgba(255,140,107,.25);padding:0 1px}
+.odo-unit{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--muted);letter-spacing:.1em;align-self:flex-end;margin-bottom:5px;margin-left:4px}
+.china-right{text-align:right}
+.china-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
+.china-val{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--peach)}
+.china-track{width:180px;height:3px;background:rgba(255,140,107,.1);border-radius:2px;overflow:hidden;margin:5px 0;margin-left:auto}
+.china-fill{height:100%;background:linear-gradient(90deg,var(--peach-d),var(--peach));border-radius:2px}
+.china-sub{font-size:10px;color:var(--muted)}
+
+/* STATS */
+.stats-row{display:grid;gap:10px}
+.stat-card{border:1px solid var(--peach-border);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.card-dark{background:var(--bg2)}.card-mid{background:var(--bg3)}.card-slate{background:#1a2530;border-color:rgba(106,174,212,.18)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--peach-m))}
+.stat-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;line-height:1}
+.stat-unit{font-size:13px;color:var(--muted);margin-left:3px;font-weight:400}
+.stat-date{font-size:10px;color:var(--dimmer);margin-top:4px}
+.zone-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:2px 7px;border-radius:3px;margin-top:6px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em}
+
+/* CHARTS */
+.chart-card{background:var(--bg2);border:1px solid var(--peach-border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--peach-m),transparent)}
+.chart-title{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+.chart-wrap{position:relative;height:200px}
+
+/* ZONES */
+.zones-card{background:var(--bg2);border:1px solid var(--peach-border);border-radius:12px;padding:18px 24px;position:relative;overflow:hidden}
+.zones-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--peach-m),transparent)}
+.zones-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.zones-title{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase}
+.z-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.z-num{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.08em;width:52px;font-weight:700}
+.z-track{flex:1;height:7px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;position:relative}
+.z-fill{height:100%;border-radius:4px}
+.z-active{outline:1px solid rgba(255,140,107,.3);outline-offset:2px;border-radius:4px}
+.z-label{font-size:10px;color:var(--muted);width:145px;text-align:right}
+.zones-tip{margin-top:12px;padding-top:12px;border-top:1px solid var(--peach-border);font-size:11px;color:var(--muted);line-height:1.7}
+
+/* TABLEAU */
+.table-card{background:var(--bg2);border:1px solid var(--peach-border);border-radius:12px;overflow:hidden}
+.table-head{background:#141820;border-bottom:1px solid var(--peach-border);display:grid;grid-template-columns:105px 75px 70px 70px 85px 72px 65px 60px;padding:10px 18px}
+.th{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--dimmer);letter-spacing:.14em;text-transform:uppercase}
+.table-body{max-height:320px;overflow-y:auto}
+.t-row{display:grid;grid-template-columns:105px 75px 70px 70px 85px 72px 65px 60px;padding:11px 18px;border-bottom:1px solid rgba(255,140,107,.05);transition:background .14s;cursor:pointer}
+.t-row:hover{background:var(--bg3)}
+.td{font-size:12px;color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:13px}
+.td.muted{color:var(--muted)}
+.type-badge{font-size:9px;color:var(--peach);background:var(--peach-dim);border:1px solid var(--peach-border);padding:2px 7px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.note-badge{font-size:11px;font-weight:700;color:var(--peach);font-family:'Barlow Condensed',sans-serif}
+
+/* SORTIE CARD */
+.sortie-card{background:var(--bg2);border:1px solid var(--peach-border);border-radius:10px;overflow:hidden;transition:all .2s;position:relative}
+.sortie-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--peach-m);opacity:0;transition:opacity .2s}
+.sortie-card:hover::before{opacity:1}
+.sortie-card:hover{background:var(--bg3)}
+.s-head{padding:12px 16px;border-bottom:1px solid rgba(255,140,107,.07);display:flex;justify-content:space-between;align-items:center}
+.s-date{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.s-type{font-size:9px;color:var(--peach);background:var(--peach-dim);border:1px solid var(--peach-border);padding:2px 7px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.s-body{padding:12px 16px}
+.s-km{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:700;color:var(--peach);line-height:1}
+.s-km-u{font-size:13px;color:var(--muted)}
+.s-stats{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.ss{display:flex;flex-direction:column;gap:2px}
+.ss-lbl{font-family:'Barlow Condensed',sans-serif;font-size:8px;color:var(--dimmer);letter-spacing:.12em;text-transform:uppercase}
+.ss-val{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700}
+.profile{height:38px;margin-top:10px}
+
+/* INFO DU JOUR */
+.info-card{background:var(--bg2);border:1px solid var(--peach-border);border-radius:10px;overflow:hidden;position:relative}
+.info-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--peach-m)}
+.info-bg-text{position:absolute;top:8px;right:12px;font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:700;color:rgba(255,140,107,.05);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.info-body{padding:14px 18px;position:relative;z-index:1}
+.info-type-badge{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:2px 8px;border-radius:3px;margin-bottom:8px}
+.info-title{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--text);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+.info-title em{color:var(--peach);font-style:normal}
+.info-sub{font-size:10px;color:var(--peach);letter-spacing:.08em;margin-bottom:8px;font-family:'Barlow Condensed',sans-serif}
+.info-text{font-size:11px;color:var(--muted);line-height:1.75}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--peach-border);border-radius:14px;width:100%;max-width:520px;margin:24px;overflow:hidden}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--peach-border);display:flex;align-items:center;justify-content:space-between;background:var(--bg3)}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:.08em;text-transform:uppercase}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+.modal-body{padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+.field label{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase}
+.field input,.field select,.field textarea{background:rgba(255,140,107,.05);border:1px solid var(--peach-border);border-radius:8px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--peach-m)}
+.field select option{background:var(--bg2)}
+.field textarea{resize:none;height:60px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--peach-border);display:flex;gap:10px;justify-content:flex-end}
+.btn-cancel{background:none;border:1px solid var(--peach-border);color:var(--muted);font-family:'Barlow',sans-serif;font-size:13px;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--muted);color:var(--text)}
+.btn-submit{background:var(--peach-m);border:none;color:#fff;font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;padding:9px 22px;border-radius:8px;cursor:pointer;transition:background .2s}
+.btn-submit:hover{background:var(--peach-d)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:200;background:var(--bg2);border:1px solid var(--peach-m);border-radius:8px;padding:12px 18px;font-size:12px;color:var(--peach);font-family:'Barlow Condensed',monospace;transform:translateY(60px);opacity:0;transition:all .3s;letter-spacing:.08em}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* STATUS */
+.statusbar{position:relative;z-index:2;border-top:1px solid var(--peach-border);padding:10px 28px;display:flex;align-items:center;gap:10px;background:rgba(20,24,32,.9)}
+.status-dot{width:5px;height:5px;border-radius:50%;background:var(--peach);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.status-text{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase}
+
+/* CHART DEFAULTS */
+.chart-defaults{}
+</style>
+</head>
+<body>
+
+<!-- MONTAGNES BG -->
+<div class="mountain-bg">
+  <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMax slice" style="position:absolute;inset:0">
+    <defs>
+      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" style="stop-color:#0a0d14;stop-opacity:1"/>
+        <stop offset="100%" style="stop-color:#141820;stop-opacity:1"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="800" fill="url(#skyGrad)"/>
+    <!-- étoiles -->
+    <circle cx="100" cy="80" r="1.2" fill="rgba(226,230,240,.3)"/><circle cx="250" cy="50" r="1" fill="rgba(226,230,240,.25)"/>
+    <circle cx="420" cy="90" r="1.5" fill="rgba(226,230,240,.35)"/><circle cx="600" cy="40" r="1" fill="rgba(226,230,240,.2)"/>
+    <circle cx="780" cy="70" r="1.2" fill="rgba(226,230,240,.3)"/><circle cx="950" cy="55" r="1" fill="rgba(226,230,240,.25)"/>
+    <circle cx="1100" cy="85" r="1.3" fill="rgba(226,230,240,.3)"/>
+    <!-- Plan 3 -->
+    <path d="M0,800 L80,480 L180,560 L300,380 L440,520 L560,280 L680,430 L800,220 L920,380 L1040,240 L1140,330 L1200,290 L1200,800Z" fill="#0d1018" opacity=".95"/>
+    <!-- Plan 2 -->
+    <path d="M0,800 L60,530 L150,600 L260,420 L380,560 L500,310 L620,470 L740,250 L860,410 L980,270 L1080,360 L1160,310 L1200,330 L1200,800Z" fill="#111520" opacity=".9"/>
+    <!-- Plan 1 -->
+    <path d="M0,800 L40,580 L110,640 L200,470 L300,600 L420,360 L540,510 L660,290 L780,450 L900,300 L1000,400 L1100,340 L1200,370 L1200,800Z" fill="#151a28" opacity=".85"/>
+    <!-- Brume -->
+    <path d="M0,720 Q300,700 600,710 Q900,720 1200,705 L1200,800 L0,800Z" fill="rgba(255,140,107,.015)"/>
+    <!-- Route -->
+    <path d="M0,775 Q200,760 400,768 Q600,776 800,762 Q1000,748 1200,756" fill="none" stroke="rgba(255,140,107,.12)" stroke-width="2" stroke-dasharray="8,6"/>
+  </svg>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-icon">🚴</div>
+    <div>
+      <div class="nav-name">Vélo</div>
+      <div class="nav-sub">CHINA 2027</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <a class="nav-back" href="https://MomooChna.github.io/china2027/">← Hub</a>
+    <button class="btn-sortie" onclick="openModal()">+ Sortie</button>
+  </div>
+</nav>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('recap')">Récap</div>
+  <div class="tab" onclick="switchTab('semaine')">Semaine</div>
+  <div class="tab" onclick="switchTab('mois')">Mois</div>
+  <div class="tab" onclick="switchTab('total')">Total</div>
+</div>
+
+<!-- ===== RÉCAP ===== -->
+<div class="tab-content active" id="tab-recap">
+<div class="wrapper">
+
+  <!-- HERO -->
+  <div class="hero">
+    <canvas class="hero-canvas" id="hero-canvas"></canvas>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-day-label" id="hero-type-label">Cycliste du jour</div>
+        <div class="hero-title" id="hero-title">Eddy <em>Merckx</em></div>
+        <div class="hero-desc" id="hero-desc">5× Tour de France · 5× Giro · Le Cannibale · Belgique</div>
+      </div>
+      <div class="hero-right">
+        <div class="weather-box">
+          <div class="w-icon" id="w-icon">⛅</div>
+          <div class="w-temp" id="w-temp">18°C</div>
+          <div class="w-desc" id="w-desc">Nuageux</div>
+          <div class="w-advice w-go" id="w-advice">✓ Sortir</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ODOMETER -->
+  <div class="odo-wrap">
+    <div>
+      <div class="odo-label">Kilométrage total</div>
+      <div class="odo" id="odometer">
+        <div class="odo-d" id="od0">0</div>
+        <div class="odo-d" id="od1">0</div>
+        <div class="odo-dot">.</div>
+        <div class="odo-d" id="od2">0</div>
+        <div class="odo-d" id="od3">1</div>
+        <div class="odo-d" id="od4">7</div>
+        <div class="odo-unit">km</div>
+      </div>
+    </div>
+    <div class="china-right">
+      <div class="china-label">Progression vers la Chine 🇨🇳</div>
+      <div class="china-val" id="china-val">17 km / 8 200 km</div>
+      <div class="china-track"><div class="china-fill" id="china-fill" style="width:0.2%"></div></div>
+      <div class="china-sub" id="china-sub">Paris → Pékin · 0.2% accompli</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+    <div class="stat-card card-dark" style="--ac:var(--peach-m)">
+      <div class="stat-label">Dernière sortie</div>
+      <div class="stat-val" style="color:var(--peach)" id="r-last-km">—<span class="stat-unit">km</span></div>
+      <div class="stat-date" id="r-last-date">—</div>
+    </div>
+    <div class="stat-card card-mid" style="--ac:var(--peach-m)">
+      <div class="stat-label">Ce mois</div>
+      <div class="stat-val" style="color:var(--peach)" id="r-mois-km">—<span class="stat-unit">km</span></div>
+    </div>
+    <div class="stat-card card-slate" style="--ac:var(--blue)">
+      <div class="stat-label">Dénivelé mois</div>
+      <div class="stat-val" style="color:var(--blue)" id="r-deniv">—<span class="stat-unit">m</span></div>
+    </div>
+    <div class="stat-card card-dark" style="--ac:var(--orange)">
+      <div class="stat-label">BPM moyen</div>
+      <div class="stat-val" id="r-bpm" style="color:var(--orange)">—<span class="stat-unit">bpm</span></div>
+      <div class="zone-badge" id="r-zone" style="display:none"></div>
+    </div>
+    <div class="stat-card card-mid" style="--ac:rgba(226,230,240,.4)">
+      <div class="stat-label">Vitesse moy.</div>
+      <div class="stat-val" style="color:var(--white)" id="r-vit">—<span class="stat-unit">km/h</span></div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="chart-card">
+      <div class="chart-title">Distance par sortie (30 jours)</div>
+      <div class="chart-wrap"><canvas id="chart-recap-km"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Évolution BPM (30 jours)</div>
+      <div class="chart-wrap"><canvas id="chart-recap-bpm"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ZONES + INFO DU JOUR -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="zones-card">
+      <div class="zones-header">
+        <div class="zones-title">Zones cardiaques · FC max 192</div>
+        <div style="font-size:10px;color:rgba(255,140,107,.45);font-family:'Barlow Condensed',sans-serif;letter-spacing:.08em" id="zone-today-label">—</div>
+      </div>
+      <div class="z-row"><div class="z-num" style="color:#5aab6e">Z1</div><div class="z-track"><div class="z-fill" style="width:100%;background:rgba(90,171,110,.12)"></div></div><div class="z-label">&lt; 115 · Récupération</div></div>
+      <div class="z-row"><div class="z-num" style="color:#c4b44a">Z2</div><div class="z-track"><div class="z-fill" style="width:78%;background:rgba(196,180,74,.18)"></div></div><div class="z-label">115-134 · Endurance</div></div>
+      <div class="z-row" id="z3-row"><div class="z-num" style="color:var(--peach)">Z3</div><div class="z-track"><div class="z-fill" style="width:58%;background:linear-gradient(90deg,rgba(255,140,107,.25),rgba(255,140,107,.5))"></div></div><div class="z-label" style="color:var(--peach)" id="z3-label">134-153 · Seuil</div></div>
+      <div class="z-row"><div class="z-num" style="color:#c45a5a">Z4-5</div><div class="z-track"><div class="z-fill" style="width:38%;background:rgba(196,90,90,.12)"></div></div><div class="z-label">&gt; 153 · Intensif</div></div>
+      <div class="zones-tip" id="zones-tip">💡 <span style="color:var(--text)">Conseil :</span> 45 min en Z2 (115-134 bpm) pour développer ton cardio et brûler les graisses efficacement.</div>
+    </div>
+
+    <!-- INFO DU JOUR -->
+    <div class="info-card">
+      <div class="info-bg-text" id="info-bg-text">MERCKX</div>
+      <div class="info-body">
+        <div class="info-type-badge" id="info-badge" style="background:rgba(255,140,107,.1);color:var(--peach);border:1px solid var(--peach-border)">Cycliste</div>
+        <div class="info-title" id="info-title">Eddy <em>Merckx</em></div>
+        <div class="info-sub" id="info-sub">1969-1978 · Belgique 🇧🇪</div>
+        <div class="info-text" id="info-text">Surnommé "Le Cannibale", Merckx a remporté 525 victoires en carrière professionnelle. Son record de l'heure de 1972 (49.432 km) est resté imbattu pendant 12 ans. Considéré unanimement comme le plus grand cycliste de tous les temps.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLEAU -->
+  <div class="table-card">
+    <div class="table-head">
+      <div class="th">Date</div><div class="th">Type</div><div class="th">Km</div><div class="th">Durée</div><div class="th">Dénivelé</div><div class="th">Vitesse</div><div class="th">BPM</div><div class="th">Note</div>
+    </div>
+    <div class="table-body" id="tbody-recap"><div style="padding:32px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.15em">CHARGEMENT…</div></div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== SEMAINE ===== -->
+<div class="tab-content" id="tab-semaine">
+<div class="wrapper">
+  <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+    <div class="stat-card card-dark" style="--ac:var(--peach-m)"><div class="stat-label">Km semaine</div><div class="stat-val" style="color:var(--peach)" id="s-km">—<span class="stat-unit">km</span></div></div>
+    <div class="stat-card card-mid" style="--ac:var(--peach-m)"><div class="stat-label">Sorties</div><div class="stat-val" style="color:var(--peach)" id="s-sorties">—</div></div>
+    <div class="stat-card card-slate" style="--ac:var(--blue)"><div class="stat-label">Dénivelé</div><div class="stat-val" style="color:var(--blue)" id="s-deniv">—<span class="stat-unit">m</span></div></div>
+    <div class="stat-card card-dark" style="--ac:var(--orange)"><div class="stat-label">BPM moyen</div><div class="stat-val" id="s-bpm" style="color:var(--orange)">—<span class="stat-unit">bpm</span></div></div>
+    <div class="stat-card card-mid" style="--ac:rgba(226,230,240,.4)"><div class="stat-label">Temps total</div><div class="stat-val" style="color:var(--white)" id="s-temps">—</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="chart-card"><div class="chart-title">Km par jour cette semaine</div><div class="chart-wrap"><canvas id="chart-sem-km"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">BPM par sortie</div><div class="chart-wrap"><canvas id="chart-sem-bpm"></canvas></div></div>
+  </div>
+  <div class="table-card">
+    <div class="table-head">
+      <div class="th">Date</div><div class="th">Type</div><div class="th">Km</div><div class="th">Durée</div><div class="th">Dénivelé</div><div class="th">Vitesse</div><div class="th">BPM</div><div class="th">Note</div>
+    </div>
+    <div class="table-body" id="tbody-semaine"><div style="padding:32px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.15em">CHARGEMENT…</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ===== MOIS ===== -->
+<div class="tab-content" id="tab-mois">
+<div class="wrapper">
+  <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+    <div class="stat-card card-dark" style="--ac:var(--peach-m)"><div class="stat-label">Km ce mois</div><div class="stat-val" style="color:var(--peach)" id="m-km">—<span class="stat-unit">km</span></div></div>
+    <div class="stat-card card-mid" style="--ac:var(--peach-m)"><div class="stat-label">Sorties</div><div class="stat-val" style="color:var(--peach)" id="m-sorties">—</div></div>
+    <div class="stat-card card-slate" style="--ac:var(--blue)"><div class="stat-label">Dénivelé</div><div class="stat-val" style="color:var(--blue)" id="m-deniv">—<span class="stat-unit">m</span></div></div>
+    <div class="stat-card card-dark" style="--ac:var(--orange)"><div class="stat-label">BPM moyen</div><div class="stat-val" id="m-bpm" style="color:var(--orange)">—<span class="stat-unit">bpm</span></div></div>
+    <div class="stat-card card-mid" style="--ac:rgba(226,230,240,.4)"><div class="stat-label">Vitesse moy.</div><div class="stat-val" style="color:var(--white)" id="m-vit">—<span class="stat-unit">km/h</span></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="chart-card"><div class="chart-title">Km cumulés ce mois</div><div class="chart-wrap"><canvas id="chart-mois-km"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">BPM par sortie</div><div class="chart-wrap"><canvas id="chart-mois-bpm"></canvas></div></div>
+  </div>
+  <div class="table-card">
+    <div class="table-head">
+      <div class="th">Date</div><div class="th">Type</div><div class="th">Km</div><div class="th">Durée</div><div class="th">Dénivelé</div><div class="th">Vitesse</div><div class="th">BPM</div><div class="th">Note</div>
+    </div>
+    <div class="table-body" id="tbody-mois"><div style="padding:32px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.15em">CHARGEMENT…</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ===== TOTAL ===== -->
+<div class="tab-content" id="tab-total">
+<div class="wrapper">
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card card-dark" style="--ac:var(--peach-m)"><div class="stat-label">Km total</div><div class="stat-val" style="color:var(--peach)" id="t-km">—<span class="stat-unit">km</span></div></div>
+    <div class="stat-card card-mid" style="--ac:var(--peach-m)"><div class="stat-label">Total sorties</div><div class="stat-val" style="color:var(--peach)" id="t-sorties">—</div></div>
+    <div class="stat-card card-slate" style="--ac:var(--blue)"><div class="stat-label">Dénivelé total</div><div class="stat-val" style="color:var(--blue)" id="t-deniv">—<span class="stat-unit">m</span></div></div>
+    <div class="stat-card card-dark" style="--ac:var(--peach-m)"><div class="stat-label">Meilleure sortie</div><div class="stat-val" style="color:var(--peach)" id="t-best">—<span class="stat-unit">km</span></div></div>
+  </div>
+  <div class="chart-card"><div class="chart-title">Km par mois (historique)</div><div class="chart-wrap"><canvas id="chart-total"></canvas></div></div>
+  <div class="table-card">
+    <div class="table-head">
+      <div class="th">Date</div><div class="th">Type</div><div class="th">Km</div><div class="th">Durée</div><div class="th">Dénivelé</div><div class="th">Vitesse</div><div class="th">BPM</div><div class="th">Note</div>
+    </div>
+    <div class="table-body" id="tbody-total"><div style="padding:32px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.15em">CHARGEMENT…</div></div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Enregistrer une sortie</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Date</label><input type="date" id="f-date"></div>
+      <div class="field"><label>Type</label>
+        <select id="f-type"><option value="route">Route</option><option value="gravel">Gravel</option><option value="vtt">VTT</option><option value="home-trainer">Home-trainer</option></select>
+      </div>
+      <div class="field"><label>Distance (km)</label><input type="number" id="f-distance" placeholder="0" step="0.1" min="0"></div>
+      <div class="field"><label>Durée (min)</label><input type="number" id="f-duree" placeholder="0" min="0"></div>
+      <div class="field"><label>Dénivelé (m)</label><input type="number" id="f-deniv" placeholder="0" min="0"></div>
+      <div class="field"><label>Vitesse moy. (km/h)</label><input type="number" id="f-vit" placeholder="0" step="0.1" min="0"></div>
+      <div class="field"><label>BPM moyen</label><input type="number" id="f-bpm" placeholder="0" min="0"></div>
+      <div class="field"><label>Kcal brûlées</label><input type="number" id="f-kcal" placeholder="0" min="0"></div>
+      <div class="field"><label>Note /10</label><input type="number" id="f-note" placeholder="8" min="1" max="10"></div>
+      <div class="field full"><label>Commentaire</label><textarea id="f-commentaire" placeholder="Ressenti, conditions..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-submit" id="btn-submit" onclick="submitSortie()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="statusbar">
+  <div class="status-dot"></div>
+  <div class="status-text">Module Vélo — Actif — China 2027</div>
+  <div style="margin-left:auto;font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase" id="sync">—</div>
+</div>
+
+<script>
+const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ob4j0q0V3gujaGRCCJ74a3kyrS-DKHgsAw2vsBhSte98yKDl1K-OdSSnpvbSOZM5gpe7bl7qVh-n/pub?gid=0&single=true&output=csv';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbw5ooOvZ7T9hFjeU38YXXT_7Xlqmdcd8GmCxnbycnt6a7LqUqFfdFM8DhNKcJ4dXX1ceg/exec';
+
+let allSorties=[];
+let charts={};
+
+// ===== INFO DU JOUR =====
+const INFOS=[
+  {type:'cycliste',title:'Eddy Merckx',em:'Merckx',sub:'1965-1978 · Belgique 🇧🇪',bg:'MERCKX',text:"Surnommé 'Le Cannibale', Merckx a remporté 525 victoires en carrière. Son record de l'heure de 1972 (49.4 km) est resté imbattu 12 ans. Unanimement considéré comme le plus grand cycliste de l'histoire."},
+  {type:'course',title:'Tour de France',em:'France',sub:'3 500 km · 21 étapes · 1903',bg:'TOUR',text:"La course cycliste la plus célèbre au monde, créée en 1903 par Henri Desgrange. 21 étapes sur 3 semaines à travers la France. Le maillot jaune symbolise le leader du classement général depuis 1919."},
+  {type:'cycliste',title:'Tadej Pogačar',em:'Pogačar',sub:'2020-présent · Slovénie 🇸🇮',bg:'POGACAR',text:"À seulement 25 ans, Pogačar a déjà remporté 3 Tours de France (2020, 2021, 2024). Grimpeur exceptionnel et redoutable en contre-la-montre, il incarne la nouvelle génération du cyclisme mondial."},
+  {type:'course',title:'Paris-Roubaix',em:'Roubaix',sub:"L'Enfer du Nord · 1896",bg:'ROUBAIX',text:"Surnommée 'L'Enfer du Nord', cette classique printanière traverse 30 secteurs de pavés sur 260 km. Les pavés de l'arrivée au vélodrome de Roubaix sont légendaires. Victoire la plus imprévisible du cyclisme."},
+  {type:'cycliste',title:'Fausto Coppi',em:'Coppi',sub:'1940-1959 · Italie 🇮🇹',bg:'COPPI',text:"'Il Campionissimo' a révolutionné le cyclisme moderne. Double vainqueur Tour-Giro la même année (1949 et 1952), il fut le premier cycliste à devenir une vraie star internationale."},
+  {type:'course',title:'Giro d\'Italia',em:'Italia',sub:'3 500 km · 21 étapes · 1909',bg:'GIRO',text:"Le Tour d'Italie, créé en 1909, est l'une des trois Grandes Boucles. Réputé pour ses arrivées en altitude spectaculaires (Stelvio, Mortirolo, Zoncolan). Le maillot rose est porté par le leader."},
+  {type:'cycliste',title:'Bernard Hinault',em:'Hinault',sub:'1978-1986 · France 🇫🇷',bg:'HINAULT',text:"'Le Blaireau' fut l'un des cyclistes les plus charismatiques de l'histoire. 5 Tours de France, 3 Giros, 2 Vueltas. Dernier Français vainqueur du Tour en 1985. Connu pour son caractère combatif et impitoyable."},
+  {type:'course',title:'Vuelta a España',em:'España',sub:'3 200 km · 21 étapes · 1935',bg:'VUELTA',text:"La troisième Grande Boucle, créée en 1935. Réputée pour ses arrivées en altitude et son intensité. Le maillot rouge symbolise le leader. La Vuelta clôture traditionnellement la saison en septembre."},
+  {type:'cycliste',title:'Miguel Indurain',em:'Indurain',sub:'1990-1996 · Espagne 🇪🇸',bg:'INDURAIN',text:"'Big Mig' a dominé le Tour avec 5 victoires consécutives (1991-1995). Sa capacité pulmonaire extraordinaire (8 litres contre 5 en moyenne) lui permettait de produire une puissance phénoménale en contre-la-montre."},
+  {type:'course',title:'Milan-San Remo',em:'San Remo',sub:"La Classicissima · 1907",bg:'SANREMO',text:"La plus longue classique du calendrier (294 km) est surnommée 'La Classicissima'. Elle relie Milan à San Remo le long de la côte ligure. La montée du Poggio à 6 km de l'arrivée est souvent décisive."},
+  {type:'cycliste',title:'Chris Froome',em:'Froome',sub:'2012-2018 · Grande-Bretagne 🇬🇧',bg:'FROOME',text:"Quadruple vainqueur du Tour (2013, 2015, 2016, 2017), Froome est l'un des plus grands grimpeurs de sa génération. Sa remontée miraculeuse après son accident de 2019 est l'une des histoires les plus inspirantes du sport."},
+  {type:'course',title:'Liège-Bastogne-Liège',em:'Bastogne',sub:"La Doyenne · 1892",bg:'LIEGE',text:"La plus ancienne classique encore disputée, surnommée 'La Doyenne'. 258 km à travers les Ardennes belges avec plus de 4 000m de dénivelé. Les côtes de la Redoute et Saint-Nicolas sont particulièrement redoutées."},
+  {type:'cycliste',title:'Tom Simpson',em:'Simpson',sub:'1956-1967 · Grande-Bretagne 🇬🇧',bg:'SIMPSON',text:"Premier Britannique à porter le maillot jaune, Tom Simpson mourut tragiquement sur le Mont Ventoux lors du Tour 1967. Sa stèle au sommet est devenue un lieu de pèlerinage pour les cyclistes du monde entier."},
+  {type:'course',title:'Tour des Flandres',em:'Flandres',sub:'268 km · 1913',bg:'FLANDRES',text:"'De Ronde van Vlaanderen' est la plus grande fête populaire du cyclisme. 268 km à travers les pavés et les murs (Kapelmuur, Paterberg, Koppenberg) de Flandre. Plus d'un million de spectateurs bordent le parcours."},
+  {type:'cycliste',title:'Laurent Fignon',em:'Fignon',sub:'1982-1993 · France 🇫🇷',bg:'FIGNON',text:"'Le Professeur' remporta 2 Tours de France et 2 Giros. Connu pour avoir perdu le Tour 1989 pour 8 secondes face à Greg LeMond lors du dernier contre-la-montre à Paris — la plus petite marge de victoire de l'histoire."},
+  {type:'course',title:'Tour de Lombardie',em:'Lombardie',sub:"La Course des Feuilles Mortes · 1905",bg:'LOMBARDIE',text:"Dernière grande classique de la saison, surnommée 'La Course des Feuilles Mortes' pour son cadre automnal. 253 km autour du lac de Côme avec des ascensions mythiques comme la Madonna del Ghisallo."},
+  {type:'cycliste',title:'Greg LeMond',em:'LeMond',sub:'1984-1994 · États-Unis 🇺🇸',bg:'LEMOND',text:"Premier américain à remporter le Tour de France (1986, 1989, 1990). Sa victoire de 1989 acquise au dernier contre-la-montre parisien reste la plus dramatique de l'histoire. Pionnier de l'aérodynamisme dans le cyclisme."},
+  {type:'course',title:'Critérium du Dauphiné',em:'Dauphiné',sub:'8 étapes · Alpes · 1947',bg:'DAUPHINE',text:"Course préparatoire par excellence avant le Tour de France, le Dauphiné traverse les cols alpins les plus difficiles. Palmarès souvent prédictif du Tour : Merckx, Hinault, Indurain, Froome et Pogačar l'ont tous remporté avant de gagner le Tour."},
+  {type:'cycliste',title:'Vincenzo Nibali',em:'Nibali',sub:'2007-2022 · Italie 🇮🇹',bg:'NIBALI',text:"'Lo Squalo dello Stretto' est l'un des rares coureurs à avoir remporté les trois Grandes Boucles (Tour 2014, Giro 2013 et 2016, Vuelta 2010). Descendeur exceptionnel, il remporta le Tour dans des conditions météo extrêmes."},
+  {type:'course',title:'Strade Bianche',em:'Bianche',sub:'184 km · Toscane · 2007',bg:'STRADE',text:"Créée en 2007, cette course sur les routes blanches (strade bianche) de Toscane est rapidement devenue une classique incontournable. Les secteurs de gravel toscan rappellent Paris-Roubaix mais sous le soleil italien."},
+  {type:'cycliste',title:'Wout Van Aert',em:'Van Aert',sub:'2018-présent · Belgique 🇧🇪',bg:'VANAERT',text:"Phénomène de polyvalence, Van Aert est capable de gagner sur toutes les terrains : classiques pavées, étapes en montagne, contre-la-montre, sprints. Triple champion du monde de cyclo-cross, il représente la nouvelle génération de cyclistes complets."},
+  {type:'course',title:'Amstel Gold Race',em:'Gold Race',sub:'257 km · Pays-Bas · 1966',bg:'AMSTEL',text:"Seule grande classique disputée aux Pays-Bas, l'Amstel traverse le Limbourg avec ses 35 côtes redoutables. Le Cauberg et le Bemelerberg sont particulièrement sélectifs. Souvent appelée 'la classique des grimpeurs'."},
+  {type:'cycliste',title:'Primož Roglič',em:'Roglič',sub:'2016-présent · Slovénie 🇸🇮',bg:'ROGLIC',text:"Ancien sauteur à ski reconverti en cycliste à 22 ans, Roglič est devenu l'un des meilleurs coureurs du monde. 4 Vueltas, leader de la Jumbo-Visma, il est connu pour ses contre-la-montre et sa résilience mentale."},
+  {type:'course',title:'Paris-Nice',em:'Nice',sub:"La Course au Soleil · 1933",bg:'PARISNICE',text:"'La Course au Soleil' ouvre la saison européenne chaque mars. 8 étapes de Paris à la Côte d'Azur, souvent avec des conditions météo contrastées. Épreuve de transition parfaite entre les classiques et les grandes montées."},
+  {type:'cycliste',title:'Mathieu van der Poel',em:'van der Poel',sub:'2019-présent · Pays-Bas 🇳🇱',bg:'MVDP',text:"Petit-fils de Raymond Poulidor, MVDP est l'autre phénomène de polyvalence de sa génération. Champion du monde sur route 2023, triple vainqueur du Tour des Flandres, vainqueur de Milan-San Remo et de Paris-Roubaix. Cycliste total."},
+  {type:'course',title:'Critérium International',em:'International',sub:'2 étapes · 1921',bg:'CRITERIUM',text:"Course de début de saison particulièrement aimée des grimpeurs. Deux étapes dont une contre-la-montre et une étape de montagne. Palmarès prestigieux avec Hinault, Fignon et Contador parmi les vainqueurs."},
+  {type:'cycliste',title:'Richard Virenque',em:'Virenque',sub:'1992-2004 · France 🇫🇷',bg:'VIRENQUE',text:"7 fois roi de la montagne au Tour de France, Virenque reste le recordman de ce classement. Populaire en France malgré les affaires de dopage de l'époque Festina, il resta l'image du grimpeur français des années 90."},
+  {type:'course',title:'Tirreno-Adriatico',em:'Adriatico',sub:'7 étapes · Italie · 1966',bg:'TIRRENO',text:"'La Corsa dei Due Mari' (la course des deux mers) relie la mer Tyrrhénienne à l'Adriatique en une semaine. Épreuve de préparation idéale pour Milan-San Remo, elle combine étapes de plaine, semi-montagne et contre-la-montre."},
+  {type:'cycliste',title:'Alejandro Valverde',em:'Valverde',sub:'2002-2022 · Espagne 🇪🇸',bg:'VALVERDE',text:"'El Imbatido' fut l'un des coureurs les plus constants de sa génération. Champion du monde 2018 à 38 ans, vainqueur de 5 Flèches Wallonnes et de Liège-Bastogne-Liège 2006. Professionnel pendant 20 ans jusqu'en 2022."},
+  {type:'course',title:'Flèche Wallonne',em:'Wallonne',sub:'198 km · Belgique · 1936',bg:'FLECHE',text:"Classique ardennaise de 198 km culminant au célèbre mur de Huy. Ce mur de 1.3 km à 9.3% de pente moyenne est gravi 3 fois dans la journée. Le vainqueur est souvent celui qui peut répéter cet effort explosif."},
+];
+
+function getDayInfo(){
+  const start=new Date('2026-06-11');
+  const now=new Date();
+  const idx=Math.max(0,Math.floor((now-start)/86400000))%INFOS.length;
+  return INFOS[idx];
+}
+
+// ===== ZONES BPM =====
+function getBpmZone(bpm){
+  if(!bpm||bpm<=0)return null;
+  if(bpm<115)return{label:'Zone 1 · Récupération',color:'#5aab6e',short:'Z1'};
+  if(bpm<134)return{label:'Zone 2 · Endurance',color:'#c4b44a',short:'Z2'};
+  if(bpm<153)return{label:'Zone 3 · Seuil aérobie',color:'#ff8c6b',short:'Z3'};
+  return{label:'Zone 4-5 · Intensif',color:'#c45a5a',short:'Z4-5'};
+}
+
+// ===== HERO CANVAS =====
+function drawHero(){
+  const c=document.getElementById('hero-canvas');
+  if(!c)return;
+  c.width=c.offsetWidth;c.height=c.offsetHeight;
+  const ctx=c.getContext('2d');
+  const w=c.width,h=c.height;
+  // Ciel
+  const sky=ctx.createLinearGradient(0,0,0,h);
+  sky.addColorStop(0,'#080b12');sky.addColorStop(1,'#141820');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+  // Étoiles
+  for(let i=0;i<40;i++){
+    ctx.beginPath();ctx.arc(Math.random()*w,Math.random()*h*.5,Math.random()*1.3+.3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(226,230,240,${Math.random()*.45+.1})`;ctx.fill();
+  }
+  // Montagnes
+  [[.12,'#0a0e18'],[.08,'#0e1420'],[.04,'#121826']].forEach(([base,color],i)=>{
+    ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(0,h);
+    const pts=8;
+    for(let j=0;j<=pts;j++){
+      const x=j/pts*w;
+      const y=h*(base+.42+Math.sin(j*1.3+i*1.5)*.16+Math.sin(j*2.8+i*2.2)*.07);
+      j===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
+  });
+  // Route
+  ctx.strokeStyle='rgba(255,140,107,.18)';ctx.lineWidth=2;ctx.setLineDash([7,5]);
+  ctx.beginPath();
+  ctx.moveTo(0,h*.87);
+  ctx.bezierCurveTo(w*.25,h*.82,w*.5,h*.88,w*.75,h*.78);
+  ctx.bezierCurveTo(w*.88,h*.72,w*.95,h*.76,w,h*.74);
+  ctx.stroke();ctx.setLineDash([]);
+}
+
+// ===== CSV PARSING =====
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+  return lines.slice(1).map(line=>{
+    const vals=line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)||[];
+    const obj={};headers.forEach((h,i)=>{obj[h]=(vals[i]||'').replace(/"/g,'').trim()});return obj;
+  }).filter(r=>r.date);
+}
+
+function parseDate(str){
+  if(!str)return null;
+  const p=str.split(/[-\/]/);
+  return p.length===3?new Date(p[0],p[1]-1,p[2]):new Date(str);
+}
+
+function formatDate(d){
+  if(!d)return'—';
+  return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();
+}
+
+function formatDuree(min){
+  if(!min||isNaN(min))return'—';
+  const h=Math.floor(min/60),m=min%60;
+  return h>0?`${h}h${m.toString().padStart(2,'0')}`:`${m}min`;
+}
+
+function getWeekBounds(){
+  const now=new Date();
+  const day=now.getDay()===0?6:now.getDay()-1;
+  const monday=new Date(now);monday.setDate(now.getDate()-day);monday.setHours(0,0,0,0);
+  const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);sunday.setHours(23,59,59,999);
+  return{monday,sunday};
+}
+
+// ===== CHART OPTIONS =====
+function chartOpts(color='#ff8c6b'){
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1e2e',borderColor:'rgba(255,140,107,.2)',borderWidth:1,titleColor:color,bodyColor:'#e2e6f0',titleFont:{family:'Barlow Condensed',size:11},bodyFont:{family:'Barlow',size:12}}},
+    scales:{x:{grid:{color:'rgba(255,140,107,.05)'},ticks:{color:'rgba(226,230,240,.25)',font:{family:'Barlow Condensed',size:9}}},y:{grid:{color:'rgba(255,140,107,.05)'},ticks:{color:'rgba(226,230,240,.25)',font:{family:'Barlow Condensed',size:9}},beginAtZero:true}}};
+}
+
+function makeChart(id,labels,data,type='bar',color='#ff8c6b'){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{type,data:{labels,datasets:[{data,backgroundColor:type==='bar'?color+'44':'transparent',borderColor:color,borderWidth:type==='bar'?0:2,borderRadius:type==='bar'?4:0,pointBackgroundColor:color,pointRadius:type==='line'?4:0,fill:false,tension:.4}]},options:chartOpts(color)});
+}
+
+// ===== RENDER ROWS =====
+function renderRows(sorties,id){
+  const el=document.getElementById(id);
+  const grid='grid-template-columns:105px 75px 70px 70px 85px 72px 65px 60px';
+  if(!sorties.length){el.innerHTML='<div style="padding:32px;text-align:center;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;color:rgba(226,230,240,.25);letter-spacing:.15em">AUCUNE DONNÉE</div>';return}
+  el.innerHTML=[...sorties].reverse().map(s=>{
+    const d=parseDate(s.date);
+    const bpm=parseInt(s.BPM)||0;
+    const zone=getBpmZone(bpm);
+    const bc=zone?zone.color:'rgba(226,230,240,.35)';
+    return`<div class="t-row" style="${grid}">
+      <div class="td muted">${d?formatDate(d):s.date}</div>
+      <div class="td"><span class="type-badge">${s.type||'—'}</span></div>
+      <div class="td" style="color:var(--peach);font-weight:700">${s.distance_km||'—'} km</div>
+      <div class="td muted">${formatDuree(parseInt(s['durée_min']))}</div>
+      <div class="td" style="color:var(--blue)">${s['dénivelé_m']||'—'} m</div>
+      <div class="td" style="color:rgba(226,230,240,.6)">${s.vitesse_moy?s.vitesse_moy+' km/h':'—'}</div>
+      <div class="td" style="color:${bc};font-weight:700">${bpm||'—'}</div>
+      <div class="td"><span class="note-badge">${s.note||'—'}/10</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ===== LOAD DATA =====
+function setBpm(elId,zoneId,bpm){
+  const el=document.getElementById(elId);
+  const ze=document.getElementById(zoneId);
+  if(!el)return;
+  const zone=getBpmZone(bpm);
+  el.innerHTML=bpm>0?`${bpm}<span class="stat-unit">bpm</span>`:'—';
+  el.style.color=bpm>0?zone.color:'rgba(226,230,240,.3)';
+  if(ze&&zone&&bpm>0){ze.style.display='inline-flex';ze.style.background=zone.color+'22';ze.style.color=zone.color;ze.style.border=`1px solid ${zone.color}44`;ze.textContent=zone.label}
+}
+
+function loadRecap(sorties){
+  const now=new Date();
+  const{monday,sunday}=getWeekBounds();
+  const last=sorties[sorties.length-1];
+  const thisMonth=sorties.filter(s=>{const d=parseDate(s.date);return d&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  const last30=sorties.filter(s=>{const d=parseDate(s.date);return d&&(now-d)<=30*86400000});
+  if(last){document.getElementById('r-last-km').innerHTML=`${last.distance_km||'—'}<span class="stat-unit">km</span>`;document.getElementById('r-last-date').textContent=formatDate(parseDate(last.date));}
+  document.getElementById('r-mois-km').innerHTML=`${thisMonth.reduce((a,s)=>a+(parseFloat(s.distance_km)||0),0).toFixed(1)}<span class="stat-unit">km</span>`;
+  document.getElementById('r-deniv').innerHTML=`${thisMonth.reduce((a,s)=>a+(parseFloat(s['dénivelé_m'])||0),0).toFixed(0)}<span class="stat-unit">m</span>`;
+  const bpms=last30.filter(s=>parseInt(s.BPM)>0);
+  const bpmMoy=bpms.length?Math.round(bpms.reduce((a,s)=>a+parseInt(s.BPM),0)/bpms.length):0;
+  setBpm('r-bpm','r-zone',bpmMoy);
+  if(bpmMoy>0){document.getElementById('zone-today-label').textContent='Ton '+bpmMoy+' bpm → '+(getBpmZone(bpmMoy)||{label:'—'}).label;document.getElementById('z3-label').textContent='134-153 · Seuil'+(bpmMoy>=134&&bpmMoy<153?' ← Toi':'')}
+  const vits=thisMonth.filter(s=>parseFloat(s.vitesse_moy)>0);
+  document.getElementById('r-vit').innerHTML=vits.length?`${(vits.reduce((a,s)=>a+(parseFloat(s.vitesse_moy)||0),0)/vits.length).toFixed(1)}<span class="stat-unit">km/h</span>`:'—';
+  const totKm=sorties.reduce((a,s)=>a+(parseFloat(s.distance_km)||0),0);
+  updateOdometer(totKm);
+  const chinaTotal=8200,pct=(totKm/chinaTotal*100).toFixed(2);
+  document.getElementById('china-val').textContent=`${totKm.toFixed(1)} km / ${chinaTotal.toLocaleString()} km`;
+  document.getElementById('china-fill').style.width=Math.min(100,pct)+'%';
+  document.getElementById('china-sub').textContent=`Paris → Pékin · ${pct}% accompli`;
+  makeChart('chart-recap-km',last30.map(s=>{const d=parseDate(s.date);return d?formatDate(d).slice(0,5):''}),last30.map(s=>parseFloat(s.distance_km)||0),'bar','#ff8c6b');
+  makeChart('chart-recap-bpm',last30.map(s=>{const d=parseDate(s.date);return d?formatDate(d).slice(0,5):''}),last30.map(s=>parseInt(s.BPM)||0),'line','#c47a2a');
+  renderRows(last30,'tbody-recap');
+}
+
+function loadSemaine(sorties){
+  const{monday,sunday}=getWeekBounds();
+  const week=sorties.filter(s=>{const d=parseDate(s.date);return d&&d>=monday&&d<=sunday});
+  document.getElementById('s-km').innerHTML=`${week.reduce((a,s)=>a+(parseFloat(s.distance_km)||0),0).toFixed(1)}<span class="stat-unit">km</span>`;
+  document.getElementById('s-sorties').textContent=week.length;
+  document.getElementById('s-deniv').innerHTML=`${week.reduce((a,s)=>a+(parseFloat(s['dénivelé_m'])||0),0).toFixed(0)}<span class="stat-unit">m</span>`;
+  document.getElementById('s-temps').textContent=formatDuree(week.reduce((a,s)=>a+(parseInt(s['durée_min'])||0),0));
+  const bpmsW=week.filter(s=>parseInt(s.BPM)>0);
+  setBpm('s-bpm',null,bpmsW.length?Math.round(bpmsW.reduce((a,s)=>a+parseInt(s.BPM),0)/bpmsW.length):0);
+  const jours=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const kmJ=jours.map((_,i)=>{const j=new Date(monday);j.setDate(monday.getDate()+i);return week.filter(s=>{const d=parseDate(s.date);return d&&d.toDateString()===j.toDateString()}).reduce((a,s)=>a+(parseFloat(s.distance_km)||0),0)});
+  const bpmJ=jours.map((_,i)=>{const j=new Date(monday);j.setDate(monday.getDate()+i);const ws=week.filter(s=>{const d=parseDate(s.date);return d&&d.toDateString()===j.toDateString()});const b=ws.filter(s=>parseInt(s.BPM)>0);return b.length?Math.round(b.reduce((a,s)=>a+parseInt(s.BPM),0)/b.length):0});
+  makeChart('chart-sem-km',jours,kmJ,'bar','#ff8c6b');
+  makeChart('chart-sem-bpm',jours,bpmJ,'line','#c47a2a');
+  renderRows(week,'tbody-semaine');
+}
+
+function loadMois(sorties){
+  const now=new Date();
+  const mois=sorties.filter(s=>{const d=parseDate(s.date);return d&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  document.getElementById('m-km').innerHTML=`${mois.reduce((a,s)=>a+(parseFloat(s.distance_km)||0),0).toFixed(1)}<span class="stat-unit">km</span>`;
+  document.getElementById('m-sorties').textContent=mois.length;
+  document.getElementById('m-deniv').innerHTML=`${mois.reduce((a,s)=>a+(parseFloat(s['dénivelé_m'])||0),0).toFixed(0)}<span class="stat-unit">m</span>`;
+  const vits=mois.filter(s=>parseFloat(s.vitesse_moy)>0);
+  document.getElementById('m-vit').innerHTML=vits.length?`${(vits.reduce((a,s)=>a+(parseFloat(s.vitesse_moy)||0),0)/vits.length).toFixed(1)}<span class="stat-unit">km/h</span>`:'—';
+  const bpmsM=mois.filter(s=>parseInt(s.BPM)>0);
+  setBpm('m-bpm',null,bpmsM.length?Math.round(bpmsM.reduce((a,s)=>a+parseInt(s.BPM),0)/bpmsM.length):0);
+  let cumul=0;
+  const labels=mois.map(s=>{const d=parseDate(s.date);return d?d.getDate()+'/'+(d.getMonth()+1):''});
+  const data=mois.map(s=>{cumul+=parseFloat(s.distance_km)||0;return parseFloat(cumul.toFixed(1))});
+  makeChart('chart-mois-km',labels,data,'line','#ff8c6b');
+  makeChart('chart-mois-bpm',labels,mois.map(s=>parseInt(s.BPM)||0),'line','#c47a2a');
+  renderRows(mois,'tbody-mois');
+}
+
+function loadTotal(sorties){
+  document.getElementById('t-km').innerHTML=`${sorties.reduce((a,s)=>a+(parseFloat(s.distance_km)||0),0).toFixed(0)}<span class="stat-unit">km</span>`;
+  document.getElementById('t-sorties').textContent=sorties.length;
+  document.getElementById('t-deniv').innerHTML=`${sorties.reduce((a,s)=>a+(parseFloat(s['dénivelé_m'])||0),0).toFixed(0)}<span class="stat-unit">m</span>`;
+  const best=Math.max(0,...sorties.map(s=>parseFloat(s.distance_km)||0));
+  document.getElementById('t-best').innerHTML=`${best.toFixed(1)}<span class="stat-unit">km</span>`;
+  const parMois={};
+  sorties.forEach(s=>{const d=parseDate(s.date);if(!d)return;const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');parMois[k]=(parMois[k]||0)+(parseFloat(s.distance_km)||0)});
+  const keys=Object.keys(parMois).sort();
+  makeChart('chart-total',keys,keys.map(k=>parseFloat(parMois[k].toFixed(1))),'bar','#ff8c6b');
+  renderRows(sorties,'tbody-total');
+}
+
+function updateOdometer(km){
+  const s=km.toFixed(1).replace('.','');
+  const digits=['od0','od1','od2','od3','od4'];
+  const padded=s.padStart(5,'0');
+  digits.forEach((id,i)=>{const el=document.getElementById(id);if(el)el.textContent=padded[i]||'0'});
+}
+
+async function loadData(retry=3){
+  try{
+    const r=await fetch(SHEET_URL+'&t='+Date.now(),{cache:'no-store'});
+    const text=await r.text();
+    allSorties=parseCSV(text).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+    loadRecap(allSorties);loadSemaine(allSorties);loadMois(allSorties);loadTotal(allSorties);
+    document.getElementById('sync').textContent='SYNC '+new Date().toLocaleTimeString('fr-FR');
+  }catch(e){if(retry>0)setTimeout(()=>loadData(retry-1),2000)}
+}
+
+// ===== MODAL =====
+function openModal(){document.getElementById('modal').classList.add('open');document.getElementById('f-date').value=new Date().toISOString().split('T')[0]}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.style.borderColor=err?'#c45a5a':'var(--peach-m)';t.style.color=err?'#c45a5a':'var(--peach)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500)}
+
+async function submitSortie(){
+  const btn=document.getElementById('btn-submit');
+  const date=document.getElementById('f-date').value;
+  const distance=document.getElementById('f-distance').value;
+  if(!date||!distance){showToast('Date et distance obligatoires',true);return}
+  btn.disabled=true;btn.textContent='Envoi…';
+  const valeurs=[date,document.getElementById('f-type').value||'',parseFloat(distance)||'',parseInt(document.getElementById('f-duree').value)||'',parseInt(document.getElementById('f-deniv').value)||'',parseFloat(document.getElementById('f-vit').value)||'',parseInt(document.getElementById('f-bpm').value)||'',parseInt(document.getElementById('f-note').value)||'',document.getElementById('f-commentaire').value||'',parseInt(document.getElementById('f-kcal').value)||''];
+  try{
+    await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({onglet:'vélo_sorties',valeurs})});
+    closeModal();showToast('Sortie enregistrée ✓');
+    ['f-distance','f-duree','f-deniv','f-vit','f-bpm','f-kcal','f-note','f-commentaire'].forEach(id=>document.getElementById(id).value='');
+    setTimeout(loadData,2000);
+  }catch(e){showToast('Erreur réseau',true)}
+  btn.disabled=false;btn.textContent='Enregistrer';
+}
+
+// ===== TABS =====
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['recap','semaine','mois','total'][i]===name));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.toggle('active',c.id==='tab-'+name));
+  setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),50);
+}
+
+// ===== INIT =====
+function initInfoDuJour(){
+  const info=getDayInfo();
+  const isCourse=info.type==='course';
+  document.getElementById('hero-type-label').textContent=isCourse?'Course du jour':'Cycliste du jour';
+  const titleParts=info.title.split(' ');
+  const lastWord=titleParts.pop();
+  document.getElementById('hero-title').innerHTML=(titleParts.length?titleParts.join(' ')+' ':'')+`<em>${lastWord}</em>`;
+  document.getElementById('hero-desc').textContent=info.sub;
+  document.getElementById('info-badge').textContent=isCourse?'Course':'Cycliste';
+  const titleParts2=info.title.split(' ');
+  const lastWord2=titleParts2.pop();
+  document.getElementById('info-title').innerHTML=(titleParts2.length?titleParts2.join(' ')+' ':'')+`<em>${lastWord2}</em>`;
+  document.getElementById('info-sub').textContent=info.sub;
+  document.getElementById('info-bg-text').textContent=info.bg;
+  document.getElementById('info-text').textContent=info.text;
+}
+
+// MÉTÉO SIMULÉE
+const weathers=[{icon:'☀️',temp:'22°C',desc:'Ensoleillé',ok:true},{icon:'⛅',temp:'18°C',desc:'Nuageux',ok:true},{icon:'🌤',temp:'20°C',desc:'Quelques nuages',ok:true},{icon:'🌧',temp:'12°C',desc:'Pluie',ok:false},{icon:'🌬',temp:'15°C',desc:'Venteux',ok:false}];
+const w=weathers[new Date().getDay()%weathers.length];
+document.getElementById('w-icon').textContent=w.icon;
+document.getElementById('w-temp').textContent=w.temp;
+document.getElementById('w-desc').textContent=w.desc;
+const adv=document.getElementById('w-advice');
+adv.textContent=w.ok?'✓ Bonnes conditions':'⚠ Rester au chaud';
+adv.className='w-advice '+(w.ok?'w-go':'w-wait');
+
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()});
+
+window.addEventListener('resize',()=>{drawHero();Object.values(charts).forEach(c=>c.resize())});
+drawHero();
+initInfoDuJour();
+loadData();
+setInterval(loadData,300000);
+</script>
+</body>
+</html>
